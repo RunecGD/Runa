@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Веб Приложение</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<h1>Регистрация</h1>
+<form id="registerForm">
+    <input type="text" id="registerUsername" placeholder="Имя пользователя" required>
+    <input type="password" id="registerPassword" placeholder="Пароль" required>
+    <button type="submit">Зарегистрироваться</button>
+</form>
+
+<h1>Логин</h1>
+<form id="loginForm">
+    <input type="text" id="loginUsername" placeholder="Имя пользователя" required>
+    <input type="password" id="loginPassword" placeholder="Пароль" required>
+    <button type="submit">Войти</button>
+</form>
+
+<h1>Список пользователей</h1>
+<button id="fetchUsers">Показать пользователей</button>
+<ul id="userList"></ul>
+
+<script src="script.js"></script>
+</body>
+</html>
