@@ -10,7 +10,6 @@ import (
 func main() {
 	r := gin.Default()
 
-	// Настройка CORS
 	r.Use(cors.New(cors.Config{
 		AllowAllOrigins: true,
 		AllowMethods:    []string{"GET", "POST", "OPTIONS"},
@@ -21,8 +20,7 @@ func main() {
 	r.POST("/register", route.Register)
 	r.POST("/login", route.Login)
 	r.GET("/users", route.AuthMiddleware(), route.GetUsers)
-
-	// Подключение к базе данных
+	r.GET("/ws", route.HandleWebSocket)
 	config.ConnectDatabase()
 
 	err := r.Run(":8000")

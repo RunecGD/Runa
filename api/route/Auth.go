@@ -5,8 +5,11 @@ import (
 	"Runa/api/model"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/bcrypt"
+	"log"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -133,4 +136,84 @@ func GetUsers(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, userResponses) // Возвращаем пользователей
+}
+
+var clients = make(map[*Client]bool) // Подключенные клиенты
+var mu sync.Mutex                    // Мьютекс для синхронизации
+
+type Client struct {
+	Conn   *websocket.Conn
+	UserID uint
+}
+
+func HandleWebSocket(c *gin.Context) {
+	log.Println("WebSocket connection attempt")
+	header := http.Header{}
+	conn, err := websocket.Upgrade(c.Writer, c.Request, header, 1024, 1024)
+	if err != nil {
+		log.Println("Error upgrading connection:", err)
+		return // Не возвращаем JSON, так как соединение уже "хищено"
+	}
+	log.Println("WebSocket connection established")
+
+	userID, exists := c.Get("userID")
+	if !exists {
+		log.Println("User ID not found")
+		return // Также не возвращаем JSON
+	}
+
+	// Попробуем преобразовать userID к типу uint
+	var uid uint
+	switch id := userID.(type) {
+	case uint:
+		uid = id
+	case float64:
+		uid = uint(id) // Преобразуем float64 в uint
+	default:
+		log.Println("User ID is not of type uint or float64")
+		return // Не возвращаем JSON, так как соединение уже "хищено"
+	}
+
+	client := &Client{Conn: conn, UserID: uid}
+
+	mu.Lock()
+	clients[client] = true
+	mu.Unlock()
+
+	defer func() {
+		mu.Lock()
+		delete(clients, client)
+		mu.Unlock()
+		conn.Close()
+	}()
+
+	for {
+		var msg model.Message
+		if err := conn.ReadJSON(&msg); err != nil {
+			log.Println("Error reading JSON:", err)
+			break // Прерываем цикл при ошибке чтения
+		}
+
+		// Устанавливаем ID отправителя
+		msg.SenderID = uid
+
+		// Сохраняем сообщение в базе данных
+		if err := config.DB.Create(&msg).Error; err != nil {
+			log.Println("Error saving message to the database:", err)
+			continue
+		}
+
+		// Отправляем сообщение конкретному получателю
+		mu.Lock() // Блокируем мьютекс для безопасной работы с clients
+		for c := range clients {
+			if c.UserID == msg.ReceiverID {
+				if err := c.Conn.WriteJSON(msg); err != nil {
+					log.Println("Error sending message to client:", err)
+					c.Conn.Close()
+					delete(clients, c)
+				}
+			}
+		}
+		mu.Unlock() // Разблокируем мьютекс
+	}
 }
