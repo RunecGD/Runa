@@ -148,21 +148,25 @@ type Client struct {
 
 func HandleWebSocket(c *gin.Context) {
 	log.Println("WebSocket connection attempt")
+
+	// Устанавливаем заголовки для обновления соединения
 	header := http.Header{}
 	conn, err := websocket.Upgrade(c.Writer, c.Request, header, 1024, 1024)
 	if err != nil {
 		log.Println("Error upgrading connection:", err)
-		return // Не возвращаем JSON, так как соединение уже "хищено"
+		return // Соединение не было установлено
 	}
 	log.Println("WebSocket connection established")
 
+	// Получаем userID из контекста
 	userID, exists := c.Get("userID")
 	if !exists {
 		log.Println("User ID not found")
-		return // Также не возвращаем JSON
+		conn.Close() // Закрываем соединение, если userID не найден
+		return
 	}
 
-	// Попробуем преобразовать userID к типу uint
+	// Преобразуем userID к типу uint
 	var uid uint
 	switch id := userID.(type) {
 	case uint:
@@ -171,7 +175,8 @@ func HandleWebSocket(c *gin.Context) {
 		uid = uint(id) // Преобразуем float64 в uint
 	default:
 		log.Println("User ID is not of type uint or float64")
-		return // Не возвращаем JSON, так как соединение уже "хищено"
+		conn.Close() // Закрываем соединение, если тип неверный
+		return
 	}
 
 	client := &Client{Conn: conn, UserID: uid}
