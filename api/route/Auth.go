@@ -106,7 +106,6 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-// Получение списка пользователей
 func GetUsers(c *gin.Context) {
 	var users []model.User
 	if err := config.DB.Find(&users).Error; err != nil {
@@ -149,37 +148,38 @@ type Client struct {
 func HandleWebSocket(c *gin.Context) {
 	log.Println("WebSocket connection attempt")
 
+	// Извлекаем токен из параметров URL
+	token := c.Query("token")
+	if token == "" {
+		log.Println("Token not provided")
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	// Проверка токена
+	claims := jwt.MapClaims{}
+	_, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
+		return []byte("your_secret_key"), nil // Замените на свой секретный ключ
+	})
+	if err != nil {
+		log.Println("Invalid token:", err)
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	// Получаем userID из утверждений токена
+	userID := uint(claims["id"].(float64))
+
 	// Устанавливаем заголовки для обновления соединения
 	header := http.Header{}
 	conn, err := websocket.Upgrade(c.Writer, c.Request, header, 1024, 1024)
 	if err != nil {
 		log.Println("Error upgrading connection:", err)
-		return // Соединение не было установлено
+		return
 	}
 	log.Println("WebSocket connection established")
 
-	// Получаем userID из контекста
-	userID, exists := c.Get("userID")
-	if !exists {
-		log.Println("User ID not found")
-		conn.Close() // Закрываем соединение, если userID не найден
-		return
-	}
-
-	// Преобразуем userID к типу uint
-	var uid uint
-	switch id := userID.(type) {
-	case uint:
-		uid = id
-	case float64:
-		uid = uint(id) // Преобразуем float64 в uint
-	default:
-		log.Println("User ID is not of type uint or float64")
-		conn.Close() // Закрываем соединение, если тип неверный
-		return
-	}
-
-	client := &Client{Conn: conn, UserID: uid}
+	client := &Client{Conn: conn, UserID: userID}
 
 	mu.Lock()
 	clients[client] = true
@@ -196,11 +196,11 @@ func HandleWebSocket(c *gin.Context) {
 		var msg model.Message
 		if err := conn.ReadJSON(&msg); err != nil {
 			log.Println("Error reading JSON:", err)
-			break // Прерываем цикл при ошибке чтения
+			break
 		}
 
 		// Устанавливаем ID отправителя
-		msg.SenderID = uid
+		msg.SenderID = userID
 
 		// Сохраняем сообщение в базе данных
 		if err := config.DB.Create(&msg).Error; err != nil {
@@ -209,7 +209,7 @@ func HandleWebSocket(c *gin.Context) {
 		}
 
 		// Отправляем сообщение конкретному получателю
-		mu.Lock() // Блокируем мьютекс для безопасной работы с clients
+		mu.Lock()
 		for c := range clients {
 			if c.UserID == msg.ReceiverID {
 				if err := c.Conn.WriteJSON(msg); err != nil {
@@ -219,6 +219,6 @@ func HandleWebSocket(c *gin.Context) {
 				}
 			}
 		}
-		mu.Unlock() // Разблокируем мьютекс
+		mu.Unlock()
 	}
 }

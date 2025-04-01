@@ -42,18 +42,16 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 });
 
 function connectWebSocket(token) {
-    socket = new WebSocket('ws://localhost:8000/ws');
+    socket = new WebSocket(`ws://localhost:8000/ws?token=${token}`); // Передаем токен в URL
 
     socket.onopen = function () {
         console.log('WebSocket connection established');
-        // Отправка токена для авторизации (если это поддерживается на сервере)
-        socket.send(JSON.stringify({ token: token }));
+        socket.send(JSON.stringify({ message: 'Client connected' }));
     };
 
     socket.onmessage = function (event) {
         const message = JSON.parse(event.data);
         console.log('Message received:', message);
-        // Обновите UI, чтобы отобразить новое сообщение
     };
 
     socket.onclose = function () {
@@ -61,7 +59,7 @@ function connectWebSocket(token) {
     };
 
     socket.onerror = function (error) {
-        console.log('WebSocket error:', error);
+        console.error('WebSocket error:', error);
     };
 }
 
@@ -107,7 +105,7 @@ document.getElementById('fetchUsers').addEventListener('click', async () => {
 function sendMessage(content, receiverId) {
     const message = {
         content: content,
-        receiver_id: receiverId // Укажите ID получателя
+        receiver_id: parseInt(receiverId, 10) // Убедитесь, что это число
     };
     socket.send(JSON.stringify(message));
 }

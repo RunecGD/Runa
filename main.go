@@ -20,7 +20,7 @@ func main() {
 	r.POST("/register", route.Register)
 	r.POST("/login", route.Login)
 	r.GET("/users", route.AuthMiddleware(), route.GetUsers)
-	r.GET("/ws", route.AuthMiddleware(), route.HandleWebSocket)
+	r.GET("/ws", route.HandleWebSocket)
 	config.ConnectDatabase()
 
 	err := r.Run(":8000")
