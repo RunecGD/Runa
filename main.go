@@ -21,6 +21,7 @@ func main() {
 	r.POST("/login", route.Login)
 	r.GET("/users", route.AuthMiddleware(), route.GetUsers)
 	r.GET("/ws", route.HandleWebSocket)
+	r.GET("/users/", route.AuthMiddleware())
 	config.ConnectDatabase()
 
 	err := r.Run(":8000")

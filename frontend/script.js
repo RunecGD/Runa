@@ -1,77 +1,24 @@
-const BASE_URL = 'http://localhost:8000'; // Указываем базовый URL с портом 8000
 let socket; // Объявляем переменную для WebSocket
 
-document.getElementById('registerForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = document.getElementById('registerUsername').value;
-    const password = document.getElementById('registerPassword').value;
-
-    const response = await fetch(`${BASE_URL}/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
-
-    const data = await response.json();
-    alert(data.message || data.error);
-});
-
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const username = document.getElementById('loginUsername').value;
-    const password = document.getElementById('loginPassword').value;
-
-    const response = await fetch(`${BASE_URL}/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-    });
-
-    const data = await response.json();
-    if (data.token) {
-        // Сохраняем токен в localStorage
-        localStorage.setItem('token', data.token);
-        console.log("Токен установлен в localStorage:", data.token); // Для отладки
-        alert(data.message);
-
-        // После успешного входа подключаемся к WebSocket
-        connectWebSocket(data.token);
-    } else {
-        alert(data.error);
+// Функция проверки авторизации
+function checkAuth() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        // Если токен отсутствует, сохраняем текущий URL и перенаправляем на страницу входа и регистрации
+        localStorage.setItem('redirectUrl', window.location.href);
+        window.location.href = 'RegOrLog.html';
     }
-});
 
-function connectWebSocket(token) {
-    socket = new WebSocket(`ws://localhost:8000/ws?token=${token}`); // Передаем токен в URL
-
-    socket.onopen = function () {
-        console.log('WebSocket connection established');
-        socket.send(JSON.stringify({ message: 'Client connected' }));
-    };
-
-    socket.onmessage = function (event) {
-        const message = JSON.parse(event.data);
-        console.log('Message received:', message);
-    };
-
-    socket.onclose = function () {
-        console.log('WebSocket connection closed');
-    };
-
-    socket.onerror = function (error) {
-        console.error('WebSocket error:', error);
-    };
 }
 
-document.getElementById('fetchUsers').addEventListener('click', async () => {
-    // Получаем токен из localStorage
-    const token = localStorage.getItem('token'); // Извлекаем токен из localStorage
+// Проверка авторизации при загрузке страницы
+checkAuth();
+connectWebSocket();
 
-    if (!token) {
-        alert("Токен не найден. Пожалуйста, войдите в систему.");
-        return;
-    }
+document.getElementById('fetchUsers')?.addEventListener('click', async () => {
+    checkAuth(); // Проверка токена перед получением пользователей
 
+    const token = localStorage.getItem('token');
     const response = await fetch(`${BASE_URL}/users`, {
         method: 'GET', // Явно указываем метод GET
         headers: {
@@ -100,19 +47,48 @@ document.getElementById('fetchUsers').addEventListener('click', async () => {
         userList.appendChild(li);
     });
 });
+function connectWebSocket() {
+    const token = localStorage.getItem('token');
+    socket = new WebSocket(`ws://localhost:8000/ws?token=${token}`); // Передаем токен в URL
 
+    socket.onopen = function () {
+        console.log('WebSocket connection established');
+        socket.send(JSON.stringify({ message: 'Client connected' }));
+    };
+
+    socket.onmessage = function (event) {
+        const message = JSON.parse(event.data);
+        console.log('Message received:', message);
+    };
+
+    socket.onclose = function () {
+        console.log('WebSocket connection closed');
+    };
+
+    socket.onerror = function (error) {
+        console.error('WebSocket error:', error);
+    };
+}
 // Функция для отправки сообщения через WebSocket
 function sendMessage(content, receiverId) {
+    if (!socket || socket.readyState !== WebSocket.OPEN) {
+        console.error('WebSocket is not connected.');
+        alert("Ошибка: соединение с сервером не установлено.");
+        return;
+    }
+
     const message = {
         content: content,
         receiver_id: parseInt(receiverId, 10) // Убедитесь, что это число
     };
+
     socket.send(JSON.stringify(message));
 }
 
 // Пример использования отправки сообщения
-document.getElementById('sendMessageForm').addEventListener('submit', (e) => {
+document.getElementById('sendMessageForm')?.addEventListener('submit', (e) => {
     e.preventDefault();
+    checkAuth(); // Проверка токена перед отправкой сообщения
     const content = document.getElementById('messageContent').value;
     const receiverId = document.getElementById('receiverId').value; // ID получателя
 
