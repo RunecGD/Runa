@@ -22,6 +22,8 @@ func main() {
 	r.GET("/users", route.AuthMiddleware(), route.GetUsers)
 	r.GET("/ws", route.HandleWebSocket)
 	r.GET("/users/", route.AuthMiddleware())
+	r.GET("/users/profile", route.GetProfile)
+	r.PUT("/users/profile", route.UpdateUserProfile)
 	config.ConnectDatabase()
 
 	err := r.Run(":8000")

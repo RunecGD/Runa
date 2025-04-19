@@ -34,31 +34,9 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
         alert(data.message);
 
         // После успешного входа перенаправляем на предыдущую страницу
-        const redirectUrl = localStorage.getItem('redirectUrl') || 'index.html'; // Указываем страницу по умолчанию
+        const redirectUrl = localStorage.getItem('redirectUrl') || 'home.html'; // Указываем страницу по умолчанию
         window.location.href = redirectUrl;
     } else {
         alert(data.error);
     }
 });
-
-function connectWebSocket(token) {
-    const socket = new WebSocket(`ws://localhost:8000/ws?token=${token}`); // Передаем токен в URL
-
-    socket.onopen = function () {
-        console.log('WebSocket connection established');
-        socket.send(JSON.stringify({ message: 'Client connected' }));
-    };
-
-    socket.onmessage = function (event) {
-        const message = JSON.parse(event.data);
-        console.log('Message received:', message);
-    };
-
-    socket.onclose = function () {
-        console.log('WebSocket connection closed');
-    };
-
-    socket.onerror = function (error) {
-        console.error('WebSocket error:', error);
-    };
-}

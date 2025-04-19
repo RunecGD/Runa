@@ -1,0 +1,161 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    display: flex;
+    background-color: #f5f0e1; /* Кремовый фон */
+}
+
+header {
+    display: flex;
+    align-items: center;
+    padding: 10px; /* Увеличены отступы */
+    background-color: #4b3d32; /* Темно-коричневый цвет */
+    width: 100%;
+    height: 4%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    justify-content: flex-start;
+    gap: 30px;
+    padding-left: calc(13.5%); /* Сдвиг логотипа на 1/8 экрана */
+    padding-right: 20px; /* Отступ справа */
+}
+
+.TopHomeLink {
+    display: flex;
+    align-items: center;
+    color: #ffffff; /* Цвет текста */
+    text-decoration: none;
+}
+
+.search-container {
+    margin: 0 20px; /* Отступы слева и справа */
+    flex-grow: 1; /* Занять оставшееся пространство */
+    display: flex; /* Для выравнивания */
+}
+
+.Search__nativeInput {
+    width: 100%; /* Занять всю ширину контейнера */
+    margin-left: 19px;
+    max-width: 270px; /* Максимальная ширина */
+    max-height: 30px;
+    padding: 10px; /* Увеличены отступы внутри поля */
+    border: 1px solid #ccc; /* Обводка */
+    border-radius: 30px; /* Закругление углов */
+    font-size: 16px; /* Увеличен размер шрифта */
+    transition: border-color 0.3s; /* Плавный переход для обводки */
+    background: #f5f0e1;
+}
+
+.Search__nativeInput:focus {
+    border-color: #4b3d32; /* Цвет обводки при фокусировке */
+    outline: none; /* Убираем стандартный контур */
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    width: 150px;
+    margin-top: 3%; /* Отступ для кнопок */
+    padding: 10px;
+    margin-left: calc(12.5%); /* Сдвиг на 1/8 экрана для кнопок */
+}
+
+.menu button {
+    margin: 5px 0;
+    padding: 10px;
+    cursor: pointer;
+    background-color: transparent; /* Прозрачный фон */
+    border: none; /* Убираем обводку */
+    color: #4b3d32; /* Цвет текста */
+    transition: background-color 0.3s, color 0.3s; /* Плавный переход */
+    text-align: left; /* Выравнивание текста по левому краю */
+    border-radius: 5px; /* Закругление кнопок */
+    font-weight: bold; /* Увеличение толщины текста */
+    display: flex; /* Для выравнивания иконки и текста */
+    align-items: center; /* Вертикальное выравнивание */
+}
+
+.menu button svg {
+    margin-right: 8px; /* Отступ между иконкой и текстом */
+    fill: currentColor; /* Цвет иконки меняется вместе с текстом */
+    width: 20px; /* Ширина иконки */
+    height: 20px; /* Высота иконки */
+}
+
+.menu button:hover {
+    background-color: #4b3d32; /* Фон при наведении */
+    color: #ffffff; /* Цвет текста при наведении */
+}
+
+.news-feed {
+    margin-top: 2%; /* Отступ для ленты новостей */
+    padding: 20px;
+    flex-grow: 1;
+    max-width: 650px;
+}
+.search-profile-container {
+    display: flex;
+    align-items: center;
+}
+.news-item {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #ffffff; /* Белый фон для новостей */
+}
+.profile-wrapper {
+    position: relative;
+}
+
+.profile-icon {
+    margin-left:600px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.profile-icon:hover {
+    transform: scale(1.05);
+}
+
+.profile-info {
+    position: absolute;
+    top: 50px; /* чуть ниже картинки */
+    right: 0;
+    background-color: #ffffff;
+    padding: 15px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s ease;
+    z-index: 999;
+    width: 250px;
+    font-size: 14px;
+    color: #333;
+}
+
+.profile-info.show {
+    opacity: 1;
+    visibility: visible;
+}
+.student-list {
+    margin-top: 70px; /* Отступ для списка студентов */
+    padding: 20px;
+    flex-grow: 1;
+    max-width: 650px;
+    margin-left: calc(12.5%);
+}
+
+.student-item {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #ffffff;
+    border-radius: 5px;
+}

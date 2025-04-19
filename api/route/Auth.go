@@ -5,11 +5,8 @@ import (
 	"Runa/api/model"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"net/http"
-	"sync"
 	"time"
 )
 
@@ -103,122 +100,5 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		c.Set("userID", claims["id"])
 		c.Next()
-	}
-}
-
-func GetUsers(c *gin.Context) {
-	var users []model.User
-	if err := config.DB.Find(&users).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
-		return
-	}
-
-	if len(users) == 0 {
-		c.JSON(http.StatusOK, []string{}) // Возврат пустого списка
-		return
-	}
-
-	// Преобразование пользователей в ответ
-	var userResponses []struct {
-		ID       uint   `json:"id"`
-		Username string `json:"username"`
-	}
-
-	for _, user := range users {
-		userResponses = append(userResponses, struct {
-			ID       uint   `json:"id"`
-			Username string `json:"username"`
-		}{
-			ID:       user.ID,
-			Username: user.Username,
-		})
-	}
-
-	c.JSON(http.StatusOK, userResponses) // Возвращаем пользователей
-}
-
-var clients = make(map[*Client]bool) // Подключенные клиенты
-var mu sync.Mutex                    // Мьютекс для синхронизации
-
-type Client struct {
-	Conn   *websocket.Conn
-	UserID uint
-}
-
-func HandleWebSocket(c *gin.Context) {
-	log.Println("WebSocket connection attempt")
-
-	// Извлекаем токен из параметров URL
-	token := c.Query("token")
-	if token == "" {
-		log.Println("Token not provided")
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
-	// Проверка токена
-	claims := jwt.MapClaims{}
-	_, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
-		return []byte("your_secret_key"), nil // Замените на свой секретный ключ
-	})
-	if err != nil {
-		log.Println("Invalid token:", err)
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
-	// Получаем userID из утверждений токена
-	userID := uint(claims["id"].(float64))
-
-	// Устанавливаем заголовки для обновления соединения
-	header := http.Header{}
-	conn, err := websocket.Upgrade(c.Writer, c.Request, header, 1024, 1024)
-	if err != nil {
-		log.Println("Error upgrading connection:", err)
-		return
-	}
-	log.Println("WebSocket connection established")
-
-	client := &Client{Conn: conn, UserID: userID}
-
-	mu.Lock()
-	clients[client] = true
-	mu.Unlock()
-
-	defer func() {
-		mu.Lock()
-		delete(clients, client)
-		mu.Unlock()
-		conn.Close()
-	}()
-
-	for {
-		var msg model.Message
-		if err := conn.ReadJSON(&msg); err != nil {
-			log.Println("Error reading JSON:", err)
-			break
-		}
-
-		// Устанавливаем ID отправителя
-		msg.SenderID = userID
-
-		// Сохраняем сообщение в базе данных
-		if err := config.DB.Create(&msg).Error; err != nil {
-			log.Println("Error saving message to the database:", err)
-			continue
-		}
-
-		// Отправляем сообщение конкретному получателю
-		mu.Lock()
-		for c := range clients {
-			if c.UserID == msg.ReceiverID {
-				if err := c.Conn.WriteJSON(msg); err != nil {
-					log.Println("Error sending message to client:", err)
-					c.Conn.Close()
-					delete(clients, c)
-				}
-			}
-		}
-		mu.Unlock()
 	}
 }
