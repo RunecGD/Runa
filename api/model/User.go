@@ -12,4 +12,5 @@ type User struct {
 	Specialty  string `json:"specialty"`
 	GroupName  string `json:"group_name"`
 	Course     int    `json:"course"`
+	Photo      string `json:"photo"`
 }
