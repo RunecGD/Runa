@@ -24,9 +24,6 @@ func main() {
 	r.GET("/users/", route.AuthMiddleware())
 	r.GET("/users/profile", route.GetProfile)
 	r.PUT("/users/profile", route.UpdateUserProfile)
-	r.GET("/users/chats", route.AuthMiddleware(), route.GetChats)
-	r.GET("/users/chats/messages/:userID", route.AuthMiddleware(), route.GetMessages)
-	r.GET("/users/:userID", route.GetUserInfo)
 	config.ConnectDatabase()
 
 	err := r.Run(":8000")

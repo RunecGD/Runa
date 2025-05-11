@@ -28,6 +28,7 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 
     const data = await response.json();
     if (data.token) {
+        // Сохраняем токен в localStorage
         localStorage.setItem('token', data.token);
         console.log("Токен установлен в localStorage:", data.token); // Для отладки
         alert(data.message);

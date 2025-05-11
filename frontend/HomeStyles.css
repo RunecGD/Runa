@@ -95,32 +95,27 @@ header {
     flex-grow: 1;
     max-width: 650px;
 }
-
 .search-profile-container {
     display: flex;
     align-items: center;
 }
-
 .news-item {
     border: 1px solid #ddd;
     padding: 10px;
     margin-bottom: 10px;
     background-color: #ffffff; /* Белый фон для новостей */
 }
-
 .profile-wrapper {
     position: relative;
 }
 
 .profile-icon {
-    display: inline-block; /* Попробуйте изменить на inline-block */
-    margin-left: 600px;
+    margin-left:600px;
     width: 40px;
     height: 40px;
     border-radius: 50%;
     cursor: pointer;
     transition: transform 0.3s ease;
-    object-fit: cover; /* Обеспечивает правильное отображение изображения */
 }
 
 .profile-icon:hover {
@@ -149,43 +144,18 @@ header {
     opacity: 1;
     visibility: visible;
 }
-
 .student-list {
-    list-style-type: none; /* Убираем маркеры */
-    padding: 0; /* Убираем отступы */
-    /* Отступы сверху и снизу */
-    margin: 48px 0 50px 12px;
+    margin-top: 70px; /* Отступ для списка студентов */
+    padding: 20px;
+    flex-grow: 1;
+    max-width: 650px;
+    margin-left: calc(12.5%);
 }
 
-.user-item {
-    background-color: #f9f9f9; /* Цвет фона */
-    border: 1px solid #ddd; /* Рамка */
-    border-radius: 8px; /* Закругление углов */
-    padding: 10px; /* Внутренние отступы */
-    margin: 10px 0; /* Отступы между элементами */
-}
-
-.name-button {
-    background-color: transparent; /* Явно прозрачный фон */
-    border: none;
-    color: #333;
-    font-size: 1.2em;
-    text-align: left;
-    cursor: pointer;
-    padding: 0;
-    display: block;
-    margin-bottom: 5px;
-    text-decoration: none; /* Убираем подчёркивание по умолчанию */
-}
-
-.name-button:hover {
-    text-decoration: underline; /* Подчёркивание при наведении */
-}
-
-
-.specialty-text {
-
-    font-size: 0.8em; /* Уменьшение размера шрифта */
-    color: #999; /* Тусклый цвет текста для специальности */
-    margin-top: 0; /* Убираем отступ сверху */
+.student-item {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #ffffff;
+    border-radius: 5px;
 }

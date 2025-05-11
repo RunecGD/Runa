@@ -8,9 +8,7 @@ import (
 	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
-	"strconv"
 	"sync"
-	"time"
 )
 
 func GetUsers(c *gin.Context) {
@@ -21,6 +19,7 @@ func GetUsers(c *gin.Context) {
 		return
 	}
 
+	// Удаляем "Bearer " из токена
 	if len(token) > 7 && token[:7] == "Bearer " {
 		token = token[7:]
 	}
@@ -52,39 +51,18 @@ func GetUsers(c *gin.Context) {
 
 	// Преобразование пользователей в ответ
 	var userResponses []struct {
-		ID         uint   `json:"id"`
-		Name       string `json:"name"`
-		Surname    string `json:"surname"`
-		Patronymic string `json:"patronymic"`
-		StudentID  string `json:"student_id"`
-		Faculty    string `json:"faculty"`
-		Specialty  string `json:"specialty"`
-		GroupName  string `json:"group_name"`
-		Course     int    `json:"course"`
+		ID       uint   `json:"id"`
+		Username string `json:"username"`
 	}
 
 	for _, user := range users {
 		if user.ID != userID {
 			userResponses = append(userResponses, struct {
-				ID         uint   `json:"id"`
-				Name       string `json:"name"`
-				Surname    string `json:"surname"`
-				Patronymic string `json:"patronymic"`
-				StudentID  string `json:"student_id"`
-				Faculty    string `json:"faculty"`
-				Specialty  string `json:"specialty"`
-				GroupName  string `json:"group_name"`
-				Course     int    `json:"course"`
+				ID       uint   `json:"id"`
+				Username string `json:"username"`
 			}{
-				ID:         user.ID,
-				Name:       user.Name,
-				Surname:    user.Surname,
-				Patronymic: user.Patronymic,
-				StudentID:  user.StudentID,
-				Faculty:    user.Faculty,
-				Specialty:  user.Specialty,
-				GroupName:  user.GroupName,
-				Course:     user.Course,
+				ID:       user.ID,
+				Username: user.Username,
 			})
 		}
 	}
@@ -156,7 +134,7 @@ func HandleWebSocket(c *gin.Context) {
 
 		// Устанавливаем ID отправителя
 		msg.SenderID = userID
-		msg.Timestamp = time.Now()
+
 		// Сохраняем сообщение в базе данных
 		if err := config.DB.Create(&msg).Error; err != nil {
 			log.Println("Error saving message to the database:", err)
@@ -186,6 +164,7 @@ func GetProfile(c *gin.Context) {
 		return
 	}
 
+	// Удаляем "Bearer " из токена
 	if len(token) > 7 && token[:7] == "Bearer " {
 		token = token[7:]
 	}
@@ -222,7 +201,6 @@ func GetProfile(c *gin.Context) {
 		"specialty":  user.Specialty,
 		"group_name": user.GroupName,
 		"course":     user.Course,
-		"photo":      user.Photo,
 	})
 }
 
@@ -247,6 +225,7 @@ func UpdateUserProfile(c *gin.Context) {
 		return
 	}
 
+	// Удаляем "Bearer " из токена
 	if len(token) > 7 && token[:7] == "Bearer " {
 		token = token[7:]
 	}
@@ -294,111 +273,4 @@ func UpdateUserProfile(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Profile updated successfully"})
-}
-
-func GetChats(c *gin.Context) {
-	token := c.Request.Header.Get("Authorization")
-	if token == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token not provided"})
-		return
-	}
-
-	if len(token) > 7 && token[:7] == "Bearer " {
-		token = token[7:]
-	}
-
-	claims := jwt.MapClaims{}
-	_, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
-		return []byte("your_secret_key"), nil
-	})
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-		return
-	}
-
-	userID := uint(claims["id"].(float64))
-
-	var chats []model.Message
-	err = config.DB.Where("sender_id = ? OR receiver_id = ?", userID, userID).Order("timestamp DESC").Find(&chats).Error
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch messages"})
-		return
-	}
-
-	userIDs := make(map[uint]struct{})
-	for _, msg := range chats {
-		// Добавляем ID отправителя и получателя
-		if msg.SenderID != userID {
-			userIDs[msg.SenderID] = struct{}{}
-		}
-		if msg.ReceiverID != userID {
-			userIDs[msg.ReceiverID] = struct{}{}
-		}
-	}
-
-	ids := make([]uint, 0, len(userIDs))
-	for id := range userIDs {
-		ids = append(ids, id)
-	}
-
-	c.JSON(http.StatusOK, gin.H{"user_ids": ids})
-}
-func GetMessages(c *gin.Context) {
-	token := c.Request.Header.Get("Authorization")
-	if token == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Token not provided"})
-		return
-	}
-
-	if len(token) > 7 && token[:7] == "Bearer " {
-		token = token[7:]
-	}
-
-	claims := jwt.MapClaims{}
-	_, err := jwt.ParseWithClaims(token, claims, func(t *jwt.Token) (interface{}, error) {
-		return []byte("your_secret_key"), nil
-	})
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-		return
-	}
-
-	userID := uint(claims["id"].(float64))
-	targetUserID := c.Param("userID") // Получаем ID пользователя из параметров запроса
-	targetUserIDUint, err := strconv.ParseUint(targetUserID, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-
-	var messages []model.Message
-	err = config.DB.Where("(sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)", userID, targetUserIDUint, targetUserIDUint, userID).
-		Order("timestamp ASC").Find(&messages).Error
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch messages"})
-		return
-	}
-
-	if len(messages) == 0 {
-		c.JSON(http.StatusOK, gin.H{"message": "Чат пуст"})
-		return
-	}
-
-	// Возвращаем сообщения, отсортированные по времени
-	c.JSON(http.StatusOK, messages)
-}
-func GetUserInfo(c *gin.Context) {
-	targetUserID := c.Param("userID") // Получаем ID пользователя из параметров запроса
-	targetUserIDUint, err := strconv.ParseUint(targetUserID, 10, 32)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid user ID"})
-		return
-	}
-	var user model.User
-	err = config.DB.Where("id = ?", targetUserIDUint).Find(&user).Error
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user"})
-		return
-	}
-	c.JSON(http.StatusOK, user)
 }
