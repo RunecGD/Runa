@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Студенты</title>
+    <title>Runa</title>
     <link rel="stylesheet" href="HomeStyles.css">
     <link rel="icon" href="https://raw.githubusercontent.com/RunecGD/RunaPicture/c415d8f7dded7fc0043f5e0b8db9c972dae668ac/Runa.png" type="image/png">
 </head>
@@ -62,14 +62,76 @@
         Студенты
     </button>
 </div>
-
-
-<div class="student-list" id="userList"></div>
-
+<div class="profile-container">
+    <h1 id="fullName"></h1>
+        <p><strong>Факультет:</strong> <span id="faculty"></span></p>
+        <p><strong>Специальность:</strong> <span id="specialty"></span></p>
+        <p><strong>Курс:</strong> <span id="course"></span></p>
+        <p><strong>Группа:</strong> <span id="group"></span></p>
+    <button id="chatButton">Перейти в чат</button>
+</div>
 <script src="auth.js"></script>
 <script src="ProfileInfo.js"></script>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('userId');
 
-<script src="GetStudents.js">
+    async function fetchUserInfo() {
+        const response = await fetch(`${BASE_URL}/users/${userId}`);
+        if (!response.ok) {
+            alert("Ошибка при получении информации о пользователе");
+            return;
+        }
+
+        const userData = await response.json();
+        console.log(userData); // Отладка: выводим данные в консоль
+
+        document.getElementById('fullName').textContent = `${userData.surname} ${userData.name} ${userData.patronymic}`;
+        document.getElementById('faculty').textContent = userData.faculty;
+        document.getElementById('specialty').textContent = userData.specialty;
+        document.getElementById('course').textContent = userData.course;
+        document.getElementById('group').textContent = userData.group_name; // Используем group_name
+    }
+
+    document.getElementById('chatButton').onclick = () => {
+        location.href = `/frontend/userChat.html?userId=${userId}`;
+    };
+
+    fetchUserInfo();
 </script>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f5f0e1;
+        margin: 0;
+        padding: 20px;
+    }
+    .profile-container {
+        width: 600px;
+        margin-top: 40px;
+        border: 1px solid #7d5b3a;
+        border-radius: 10px;
+        padding: 20px;
+        background-color: #fff;
+    }
+    .profile-info p {
+        margin: 5px 0;
+    }
+    #chatButton {
+        display: block;
+        margin: 20px auto;
+        padding: 10px 20px;
+        background-color: #7d5b3a;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    #chatButton:hover {
+        background-color: #5a3c2a;
+    }
+</style>
+
 </body>
 </html>

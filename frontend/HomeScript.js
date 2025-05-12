@@ -10,14 +10,12 @@ function checkAuth() {
 
 }
 
-// Проверка авторизации при загрузке страницы
 checkAuth();
-fetchUserProfile(); // Получение данных профиля
 connectWebSocket();
 
 function connectWebSocket() {
     const token = localStorage.getItem('token');
-    socket = new WebSocket(`ws://localhost:8000/ws?token=${token}`); // Передаем токен в URL
+    socket = new WebSocket(`ws://192.168.172.190:8000/ws?token=${token}`); // Передаем токен в URL
 
     socket.onopen = function () {
         console.log('WebSocket connection established');
@@ -68,35 +66,3 @@ document.getElementById('sendMessageForm')?.addEventListener('submit', (e) => {
     document.getElementById('receiverId').value = '';
     document.getElementById('messageContent').value = '';
 });
-function toggleProfileInfo() {
-    const info = document.getElementById("profileInfo");
-    info.classList.toggle("show");
-}
-function populateProfile(data) {
-    document.getElementById('profileInfo').innerHTML = `
-        <p><strong>ФИО:</strong> ${data.surname} ${data.name} ${data.patronymic}</p>
-        <p><strong>Номер студ. билета:</strong> ${data.student_id}</p>
-        <p><strong>Факультет:</strong> ${data.faculty}</p>
-        <p><strong>Специальность:</strong> ${data.specialty}</p>
-        <p><strong>Группа:</strong> ${data.group_name}</p>
-        <p><strong>Курс:</strong> ${data.course}</p>
-    `;
-}
-async function fetchUserProfile() {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`${BASE_URL}/users/profile`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    });
-
-    if (!response.ok) {
-        alert("Ошибка при загрузке профиля");
-        return;
-    }
-
-    const data = await response.json();
-    populateProfile(data);
-}

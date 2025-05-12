@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8000'; // Указываем базовый URL с портом 8000
+const BASE_URL = 'http://192.168.172.190:8000'; // Указываем базовый URL с портом 8000
 
 document.getElementById('registerForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -28,7 +28,6 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 
     const data = await response.json();
     if (data.token) {
-        // Сохраняем токен в localStorage
         localStorage.setItem('token', data.token);
         console.log("Токен установлен в localStorage:", data.token); // Для отладки
         alert(data.message);
